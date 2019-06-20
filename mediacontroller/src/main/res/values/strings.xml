@@ -104,6 +104,7 @@
     <string name="start_session_activity">Start Session Activity</string>
     <string name="no_session">Media session does not contain an Activity to start</string>
     <string name="session_start_failed">Failed to open app by session activity</string>
+    <string name="error_resolution_start_failed">Failed to open error resolution activity</string>
 
     <string name="media_browse_tree_top">Top</string>
     <string name="media_browse_tree_up">Up</string>

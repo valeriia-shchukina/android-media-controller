@@ -59,6 +59,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -103,6 +104,8 @@ public class MediaAppControllerActivity extends AppCompatActivity {
     private static final String SEARCH_EXTRA = "com.example.android.mediacontroller.SEARCH";
     private static final String URI_EXTRA = "com.example.android.mediacontroller.URI";
     private static final String MEDIA_ID_EXTRA = "com.example.android.mediacontroller.MEDIA_ID";
+    private static final String ERROR_RESOLUTION_ACTION_LABEL = "android.media.extras.ERROR_RESOLUTION_ACTION_LABEL";
+    private static final String ERROR_RESOLUTION_ACTION_INTENT = "android.media.extras.ERROR_RESOLUTION_ACTION_INTENT";
 
     // Key name for Intent extras.
     private static final String APP_DETAILS_EXTRA =
@@ -136,6 +139,7 @@ public class MediaAppControllerActivity extends AppCompatActivity {
     private ModeHelper mRepeatToggle;
 
     private ViewGroup mRatingViewGroup;
+    private Button mErrorResolutionButton;
 
     private final SparseArray<ImageButton> mActionButtonMap = new SparseArray<>();
 
@@ -174,6 +178,7 @@ public class MediaAppControllerActivity extends AppCompatActivity {
         mRepeatToggle = new RepeatModeHelper();
 
         mRatingViewGroup = findViewById(R.id.rating);
+        mErrorResolutionButton = findViewById(R.id.error_resolution);
 
         if (savedInstanceState != null) {
             mMediaAppDetails = savedInstanceState.getParcelable(STATE_APP_DETAILS_KEY);
@@ -599,17 +604,57 @@ public class MediaAppControllerActivity extends AppCompatActivity {
         }
     }
 
+    private void updateErrorButton() {
+        mErrorResolutionButton.setVisibility(View.GONE);
+
+        if (mController == null) {
+            return;
+        }
+
+        PlaybackStateCompat playbackState = mController.getPlaybackState();
+        if (playbackState == null) {
+            return;
+        }
+
+
+        if (playbackState.getState() == PlaybackStateCompat.STATE_ERROR) {
+            final Bundle extras = mController.getPlaybackState().getExtras();
+            if (extras != null) {
+                final PendingIntent intent = extras.getParcelable(ERROR_RESOLUTION_ACTION_INTENT);
+                final String errorResolutionLabel = extras.getString(ERROR_RESOLUTION_ACTION_LABEL);
+
+                if (intent != null && errorResolutionLabel != null) {
+                    mErrorResolutionButton.setOnClickListener(view -> startErrorResolutionActivity(intent));
+                    mErrorResolutionButton.setText(errorResolutionLabel);
+                    mErrorResolutionButton.setVisibility(View.VISIBLE);
+                }
+            }
+        }
+    }
+
+    private void startErrorResolutionActivity(PendingIntent errorResolutionIntent) {
+        if (!sendIntent(errorResolutionIntent)) {
+            Toast.makeText(this, R.string.error_resolution_start_failed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void startSessionActivity(MediaControllerCompat mediaController) {
         PendingIntent intent = mediaController.getSessionActivity();
+        if (!sendIntent(intent)) {
+            Toast.makeText(this, R.string.session_start_failed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static boolean sendIntent(PendingIntent intent) {
         if (intent != null) {
             try {
                 intent.send();
-                return;
+                return true;
             } catch (PendingIntent.CanceledException e) {
-                Log.e(TAG, "Failed to start session activity", e);
+                Log.e(TAG, "Failed to start activity", e);
             }
         }
-        Toast.makeText(this, R.string.session_start_failed, Toast.LENGTH_SHORT).show();
+        return false;
     }
 
     private class PreparePlayHandler implements View.OnClickListener {
@@ -707,6 +752,7 @@ public class MediaAppControllerActivity extends AppCompatActivity {
             if (mediaInfoStr != null) {
                 mMediaInfoText.setText(mediaInfoStr);
             }
+            updateErrorButton();
         }
     };
 

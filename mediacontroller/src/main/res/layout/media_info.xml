@@ -84,6 +84,12 @@
         android:gravity="top|start"
         android:text="@string/media_info_default" />
 
+    <Button
+        android:id="@+id/error_resolution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
     <TextView
         style="@style/TextAppearance.AppCompat.Large"
         android:layout_width="wrap_content"
